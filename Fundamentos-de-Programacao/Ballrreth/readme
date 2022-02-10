@@ -1,0 +1,27 @@
+/*
+	Por: Fernando H. Ratusznei Caetano
+*/
+
+Linha de comando:
+	[executavel] [número de bolas] [largura] [altura]
+
+ O executavel criado pelo Makefile é salvo na pasta bin com o nome Ballreto.out
+
+ O programa cria um janela com o tamanho e com número de bolas escolido
+
+ As posições e velocidades iniciais são selecionadas aleartóriamente
+
+ Se uma bola é criada dentro de outra o tratamento de colisões as separa
+
+ A janela pode ser fechada pelo 'X' ou com a tecla 'q'
+
+ O arquivos Ball.c e Ball.h lidam com as funções relacionadas as bolas
+individuais, como a renderizacao e o tratamento de colisoes
+
+ Os arquivos Ballreth.c e Ballreth.h lidam com a inicialização do SDL e o
+controle do conjunto de bolas
+
+ Em Ballreth.h estão "#defines" que controlam o tamanho e velocidades iniciais
+das bolas
+
+ O arquivo main.c integra tudo, com a inicialização e o main loop do programa

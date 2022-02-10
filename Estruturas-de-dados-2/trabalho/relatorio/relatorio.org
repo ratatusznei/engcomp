@@ -1,0 +1,300 @@
+#+title: Relatório de trabalho prático - Análise Sintática
+#+author: Fernando Henrique Ratusznei Caetano
+#+email: fernandoratusznei@hotmail.com
+#+export_file_name: relatorio.pdf
+#+options: toc:3
+#+language: pt
+#+latex_header: \usepackage[portuguese]{babel}
+#+latex_header: \usepackage{indentfirst}
+#+latex_header: \usepackage{forest}
+#+bind: org-latex-title-command "\\maketitle \\newpage"
+#+bind: org-latex-toc-command "\\tableofcontents \\newpage"
+
+
+* Descrição do Problema
+  Dado um documento escrito seguindo uma gramática conhecida procura-se construir uma estrutura de dados que representa seu conteúdo. A gramática é um conjunto de regras que define como partes menores formam partes maiores mais complexas.
+
+  Como exemplo prático considere um documento XML. O XML, é um arquivo de texto formado por delimitadores '<' e '>', o nome de tags demarcadas por eles e seus conteúdos. Trabalhar com o texto direto não é ideal, então existem bibliotecas que constroem uma estrutura de dados, refletindo o conteúdo do arquivo XML, para acesso simplificado.
+
+  Esse trabalho estuda a análise sintática no escopo de um compilador. Compiladores criam a partir de arquivo fonte uma representação intermediária, sobre a qual se realiza análise para erros e otimizações. Durante esse trabalho prático é montada uma estrutura de dados intermediária para uma análise simplificada, porém não serão estudados os processos de otimizações.
+
+* Solução
+** Considerações iniciais
+  Para demonstrar uma solução do problema foi selecionado um subconjunto de regras da linguagem C.
+  - As palavras chaves utilizadas serão apenas: /else/, /if/, /int/, /while/. Algumas observações sobre: o único tipo considerado será o /int/, e como controle de fluxo serão considerados apenas o /while/, /if/, /else/.
+  - Será considerado apenas o operador /=/.
+  - O preprocessador não será considerado como parte da linguagem.
+
+** Descrição do processo
+   Um compilador possui vários módulos internos, serão estudados apenas o analisador léxico e o analisador sintático, sendo o último o foco do trabalho.
+
+*** Analisador léxico
+	Essa etapa tem como entrada um fluxo de caracteres direto do arquivo fonte, e como saída um sequência de elementos indivisíveis da linguagem chamados de /tokens/. Esses elementos são classificados: palavras chave, identificadores (seguindo as mesmas regras da linguagem C), constantes (números, caracteres e strings), operadores e separadores.
+
+	Para esse fim primeiro é aberto um fluxo de caracteres e se define um procedimento /next token/ que recebe o estado anterior da análise (fluxo aberto, posição no arquivo e caracteres lidos) e retorna um /token/ classificado em uma das categorias definidas no último paragrafo.
+
+	Um procedimento /next token/ de um fluxo de caracteres já aberto é dado pelo pseudocódigo:
+	1. Continua a ler a fluxo a partir do ponto que parou na última chamada ou do início se é a primeira chamada do procedimento, mantendo os caracteres lidos em um buffer e sempre olhando um a frente (lookahead).
+	   1. Se fim do fluxo de caracteres: Retorna elemento nulo sinalizando o final da análise.
+	2. Verifica se o conteúdo do buffer se encontra em uma das classificações de elementos definidas anteriormente.
+	   1. Se não for um elemento válido de nenhuma categoria: Retorna um elemento nulo sinalizando o final da análise.
+	   2. Se for um elemento válido: Verifica se o buffer mais o lookahead anexado ao seu final ainda é um elemento valido.
+		  1. Se não for válido: Cria um token com o conteúdo do buffer e o retorna
+		  2. Se for válido: Inclui o lookahead no final do buffer e lê o próximo caractere.
+
+*** Analisador sintático
+	Essa etapa tem como entrada o fluxo de /tokens/ da saída da etapa anterior e retorna uma estrutura em árvore que representa o código fonte. Essa estrutura seria analisada para erros e otimizações, e transformada na representação intermediária em etapas mais a frente no processo de compilação.
+
+	Essa estrutura de dados é conhecida na literatura como /abstract syntax tree/ (AST), ou árvore de sintaxe abstrata. Nessa árvore, a raiz representa uma sequência de operações, cada nó interno representa uma operação e os filhos dos nós internos são os operandos da operação. Para cada construção válida da linguagem de programação pode-se encontrar uma operação para preencher o nó interno.
+
+	É empregada uma construção /top-down/ (da raiz para as folhas). Para cada operação é associada uma função de construção e com base no próximo /token/ (o /lookahead/) é montada a estrutura. O pseudocódigo genérico para essas funções é:
+	1. Após confirmada o primeiro /token/ da construção, o /lookahead/ é comparado com os candidatos ao próximo símbolo da construção.
+	   1. Se não faz parte da construção, retorna erro e finaliza o programa.
+	   2. Se faz parte da construção, a função associada ao símbolo é chamada
+	2. Retorna a estrutura montada.
+
+	Já para os /tokens/ de folhas da árvore, o tipo é simplesmente comparado com o do /lookahead/, se forem diferentes é retornado erro, se forem do mesmo tipo a análise continua normalmente. Isso é implementado pela função /match/ no código.
+	A seguir são definidas essas construções junto com a sequência de /tokens/. Entradas em negrito utilizam outras construções.
+
+	- Expressões (expr):
+	  Sequências de /tokens/ formadoras:
+	  - /constante/
+	  - /identificador/
+
+	  Representação na AST (para a segunda formação):
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [expr
+        [identificador]
+      ]
+	  \end{forest}
+
+	- Declaração de variável (decl):
+
+	  Sequências de /tokens/ formadoras:
+	  - /tipo identificador ;/
+	  - /tipo identificador = *expr* ;/
+
+	  Representação na AST (para a segunda formação):
+
+	  \begin{forest}
+      for tree = { parent anchor = south, child anchor = north, }
+      [decl
+        [tipo]
+        [identificador]
+        [expr]
+      ]
+	  \end{forest}
+
+	- Atribuição (atrib):
+
+	  Sequências de /tokens/ formadoras:
+      - /identificador = *expr* ;/
+
+	  Representação na AST:
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [atrib
+        [identificador]
+        [expr]
+      ]
+	  \end{forest}
+
+	- Statement (stat):
+
+	  Sequências de /tokens/ formadoras:
+	  - *atrib* ;
+	  - *decl* ;
+
+	  Representação na AST:
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [stat
+        [decl]
+      ]
+	  \end{forest}
+
+
+	- Block (block):
+
+	  Sequências de /tokens/ formadores:
+	  - *stat*
+	  - *stat* *block*
+
+	  Representação na AST:
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [block
+        [stat]
+        [block]
+      ]
+	  \end{forest}
+
+
+	- If (if):
+	  Sequências de /tokens/ formadoras:
+	  - /if ( *expr* ) { *block* } else { *block* }/
+
+	  Representação na AST:
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [if
+        [expr (condição)]
+        [block (bloco do if)]
+        [block (block do else)]
+      ]
+	  \end{forest}
+
+	- While (while):
+	  Sequências de /tokens/ formadores:
+	  - /while ( *expr* ) { *block* }/
+
+	  Representação na AST:
+
+	  \begin{forest}
+      for tree = {
+        parent anchor = south, child anchor = north,
+      }
+      [if
+        [expr (condição)]
+        [block (block de repetição)]
+      ]
+	  \end{forest}
+
+\newpage
+* Testes
+	A partir dessas construções têm-se um subconjunto extremamente limitado das funcionalidades da linguagem C. Ainda não é possível analisar programas completos, porém algumas analises de trechos de código são apresentadas nessa seção.
+	Nesses testes a saída do programa foi copiada diretamente para um bloco utilizando o pacote /forest/ do /latex/, que gera a visualização em árvore.
+	O código de exemplo utilizado se encontra na pasta /test/ do trabalho.
+
+** Teste do if
+   Uma das limitações da implementação é que na condição do /if/ pode ter apenas uma constante ou identificador de variável. Pois expressões lógicas e aritméticas não foram implementadas.
+
+   A seguir a AST e seu código gerador:
+
+\begin{verbatim}
+    if (1)
+    {
+      x = 10;
+    }
+    else
+    {
+      int a = 13.123;
+    }
+\end{verbatim}
+
+   \begin{forest}
+for tree = {
+ parent anchor = south, child anchor = north,
+}
+[if
+  [expressao
+           [1]]
+  [block
+        [statement
+                  [atribuicao
+                             [x]
+                             [expressao
+                                      [10]]]]]
+  [block
+        [statement
+                  [declaracao
+                             [int]
+                             [a]
+                             [expressao
+                                      [13.123]]]]]]
+   \end{forest}
+
+** Teste do while
+   A mesma limitação se aplica ao while. Nesse exemplo é mostrado outro modelo de posicionamento do '{', demonstrando que os espaços em branco não contam para a análise. Observa-se também que a árvore tende a desbalancear para a direta com os /blocks/ aninhados.
+
+\begin{verbatim}
+    while (1) {
+      int y = 10;
+      x = y;
+    }
+\end{verbatim}
+\begin{forest}
+for tree = {
+ parent anchor = south, child anchor = north,
+}
+[while
+     [expressao
+              [1]]
+     [block
+           [statement
+                     [declaracao
+                                [int]
+                                [y]
+                                [expressao
+                                         [10]]]]
+           [block
+                 [statement
+                           [atribuicao
+                                      [x]
+                                      [expressao
+                                               [y]]]]]]]
+\end{forest}
+
+** Teste da falta do ';'
+   Nesse exemplo foi removido o ponto e vírgula da segunda linha.
+
+\begin{verbatim}
+    while (x) {
+      int y = 10
+      x = 33;
+    }
+\end{verbatim}
+
+   A gramática não é satisfeita e é retornado um erro indicando a linha e coluna onde ocorreu e sua razão. Nesse cado linha 3 coluna 2, foi encontrado um /token/ 'x' quando se esperava um ';'.
+
+\begin{verbatim}
+    Token inesperado em L3 C2: 'x', esperando ';'
+\end{verbatim}
+
+** Teste do if sem condição
+   Para esse teste é montado um if inválido sem condição.
+
+\begin{verbatim}
+    if () {
+      x = -10;
+    }
+    else {
+      x = 10;
+    }
+\end{verbatim}
+
+   E o erro é retornado explicando onde e a causa da falha:
+
+\begin{verbatim}
+   Token inesperado em L1 C5: ')', esperando 'constante ou identificador'
+\end{verbatim}
+
+\newpage
+* Problemas encontrados e Conclusão
+  A maior dificuldade encontrada foi que a construção de representações recursivas com o método /top-down/ utilizado é muito complicada e impossível para certas construções. Esse foi o motivo de não ter sido implementadas operações lógicas e matemáticas. Foi possível resolver esse problema na construção do /block/ definida, porém isso envolveu uma análise propicia a erros e a árvore cresce tende a crescer desbalanceada para a direita, como é possível observar no teste do /while/. Outro problema, causado pela solução do anterior, é que não é possível analisar estruturas aninhadas (/if/ dentro de /while/, etc.) devido a forma como foi tratado.
+
+  Devido ao pouco tempo que sobrou depois de descobrir o problema, decidiu-se manter o algoritmo original e avançar o máximo o possível com o já implementado. Em suma, foi aproveitado para estudar uma matéria além da aula, contudo deveria ter sido realizada um pesquisa mais aprofundada sobre as limitações dos métodos utilizados.
+
+
+
+
+\newpage
+* Referências
+  - Aho, Sethi, Ullman, Compilers: Principles, Techniques, and Tools, Addison-Wesley, 1986.
+  - "The GNU C Reference Manual". Disponível em: https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html.

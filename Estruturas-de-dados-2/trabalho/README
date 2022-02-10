@@ -1,0 +1,3 @@
+É montada uma estrutura de dados em árvore que representa a entrada. Se for
+válida é imprimida na tela, se for inválida então é retornado um erro. Essa
+análise será realizada baseada na sintaxe da linguagem C.

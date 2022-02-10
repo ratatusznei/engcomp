@@ -1,0 +1,92 @@
+#+TITLE: Ordenação por inserção
+#+LANGUAGE: pt
+
+* Sobre o problema
+Uma solução para o problema de ordenação
+
+Descrição do problema: Dado uma entrada de uma sequência de N números { a1, a2, ..., aN }, encontre um saída que é uma permutação da entrada no formato { a1', a2', ..., aN' } tal que a1' <= a2' <= ... <= aN'.
+
+* Sobre o método
+Funciona de forma eficiente em pequenos conjuntos (N pequeno).
+De uma "fonte" não ordenada ainda vamos movendo os itens para um novo conjunto. No começo esse novo conjunto está ordenado (pois está vazio). Essa movimentação é feita comparando com itens já nesse novo conjunto e INSERINDO o elemento na posição correta para se manter a ordenação.
+
+* Pseudo código
+#+BEGIN_SRC
+Procedimento INSERTION_SORT
+
+Arranjo[N] A
+
+# Dizemos que o subarray com o 1o elemento já está ordenado, começamos pelo 2o então
+Elemento E = 2o elemento
+
+para cada elemento a partir de E até o ultimo elemento de A:
+    chave <- valor de E
+
+    # Insere a chave na posicao correta em A[1o até o elemento anterior à E]
+    C <- maior (último) elemento do array ordenado
+    equanto C for maior que a chave:
+       move C um para frente (A[C+1] <- A[C])
+       verifica C anterior (C <- C - 1)
+       
+    Coloca a chave após o C atual (A[C+1] = chave)
+
+#+END_SRC
+
+* Exemplo
+#+BEGIN_SRC
+A = [5 2 4 6 1 3], N = 6
+E = 2o, A[2o] = 2
+
+[5 2 4 6 1 3]  # chave = 2
+[5 2 4 6 1 3]  # C = 1o, A[C] = 5
+[5 2 4 6 1 3]  # chave = 2, C = 5, C > chave, entra no loop
+  [5 5 4 6 1 3]  # move C para frente
+  [2 5 4 6 1 3]  # não tem elemento anterior, coloca a chave atual após último C
+[2 5 4 6 1 3]  # chave = 4
+  [2 5 4 6 1 3]  # chave = 4, C = 5, C > chave entra no loop
+  [2 5 5 6 1 3]  # move C para frente
+  [2 4 5 6 1 3]  # coloca chave após C atual
+[2 4 5 6 1 3]  # Chave = 6, C <= chave, não entra no loop
+[2 4 5 6 1 3]  # Chave = 1, C = 6, C > chave, entra no loop
+  [2 2 4 5 6 3]  # Copias C's > chave para frente
+  [1 2 4 5 6 3]  # Coloca chave após último C
+[1 2 4 5 6 3]  # Chave = 3, C = 6, entra no loop
+  [1 2 4 4 5 6]  # Copias C's > chave para frente
+  [1 2 3 4 5 6]  # Coloca chave após último C
+[1 2 3 4 5 6] # FIM, array ordenado
+#+END_SRC
+
+* Observações
+É notável que os elementos A[E..N] do arranjo compõe a "fonte ordenada" mencionada antes e os elementos A[1..E-1] é conjunto ordenado é conjunto ordenado. 
+Outra observação é para todo iteração os elementos em A[1..E-1] sempre entiveram nesse mesmo subconjunto de A. Ou seja comparando o A[1..E-1] original e o A[1..E-1] congelado em uma iteração eles possuem os mesmo elementos em permutações diferentes.
+No início de todo loop A[1..E-1] é sempre uma sequência ordenada. Essa é uma invariante do algoritmo que fica conhecida como "loop invariante".
+
+** Loop Invariante
+Pode-se usar o loop invariante para provar que o algoritmo é correto por indução. Para isso prova-se que a invariante é válida antes do loop e que ela permanece antes da próxima iteração do loop. Também é necessário que essa invariante permaneça após o loop e possua um propriedade que prove o corretude do algoritmo.
+No caso do Insertion Sort, inicialmente o primeiro elemento está ordenado e a cada loop inserimos um novo elemento exatamenta na posição que mantém o arranjo no início do array ordenado. Segue assim até que o subarray ordenado atinja o mesmo tamanho do array original, ou seja, o subarray ordenado é constituido dos mesmos elementos do array original, porém todos em ordem. Terminamos com uma saída que é uma permutação ordenada da entrada, a solução do problema descrito originalmente, o algoritmo está correto.
+
+* Análise
+#+BEGIN_SRC
+para cada elemento a partir de E até o ultimo elemento de A:                    # n vezes
+    chave <- valor de E                                                         # n - 1 vezes
+    C <- maior (último) elemento do array ordenado                              # n - 1 vezes
+    equanto C for maior que a chave:                                            #   (dist do el até o ponto ordenado [d]) vezes
+       move C um para frente (A[C+1] <- A[C])                                   #   d - 1 vezes
+       verifica C anterior (C <- C - 1)                                         #   d - 1 vezes
+    Coloca a chave após o C atual (A[C+1] = chave)                              # n - 1 vezes
+#+END_SRC
+
+** Considerando mesmo custo para cada linha [v]
+tempo de exec = T(n) = v*n + 3*v*(n - 1) + v*(n - 1)*(v*d + 2*v*(d-1))
+
+** No melhor caso o array está ordenado: a dist de todos os el até o ponto ordenado ( d ) é sempre zero
+T(n) = v*n + 3*v*(n - 1) = 4*v*n - 3*v
+
+*T(n) é linear no melhor caso, T(n) pertence a Omega(n)*
+
+** No pior caso o array está invertido: a dist de todos os el até o ponto ordenado é d em { 2, 3, ..., n }
+T(n) = 4*v*n - 3*v + v*sum{d=2, n}(3*v*d - 2*v)
+
+O termo sum é no formato x*(x-1)/2, quadrático
+*T(n) é quadrático no pior caso, T(n) pertence a O(n^2)*
+
