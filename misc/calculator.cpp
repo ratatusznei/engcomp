@@ -1,3 +1,5 @@
+// Calculator from TC++PL Chapter 10
+
 #include <iostream>
 #include <string>
 #include <map>
