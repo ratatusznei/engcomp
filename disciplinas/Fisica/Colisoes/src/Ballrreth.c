@@ -31,7 +31,7 @@ int initBallrreth(SDL_Renderer **ren, SDL_Texture **tex,
 
 	/* Tenta carregar a imagem da bola
 	   Se nao funcionar ele desenha e bolinha vermelha */
-	SDL_Surface *bmp = SDL_LoadBMP("./data/ball_tex.bmp");
+	SDL_Surface *bmp = NULL; //SDL_LoadBMP("./data/ball_tex.bmp");
 	*tex = NULL;
 
 	if (bmp) {
