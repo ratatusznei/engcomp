@@ -11,10 +11,13 @@ SRCS = ./src/*.c
 MAIN = main.c
 OUT = Ballreto.out
 
-all: 
+all: $(BIN)/$(OUT) 
+
+
+$(BIN)/$(OUT):
 	$(CC) $(SRCS) $(MAIN) -o $(BIN)/$(OUT) $(CFLAGS)
 
-run:
+run: $(BIN)/$(OUT)
 	$(BIN)/$(OUT) 22 1000 500
 
 debug:
