@@ -1,0 +1,174 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{tikz-timing}
+\usepackage{xparse}
+
+\usetikztiminglibrary[falling arrows]{clockarrows}
+
+\NewDocumentCommand{\busref}{som}{\texttt{%
+#3%
+\IfValueTF{#2}{[#2]}{}%
+\IfBooleanTF{#1}{\#}{}%
+}}
+
+\lstset{
+	frame=single,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	keywordstyle=\color{blue},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\author{Fernando Henrique Ratusznei Caetano}
+\title{Relatório do Laboratório 7}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Objetivo}
+\par A proposta do laboratório 7 foi o estudo de um circuito empregando uma memória ROM 256x8,
+isto é, uma memória armazenando 256 bytes.
+Dada uma string binária de 7 bits, o objetivo era projetar um circuito capaz
+a detectar nos dados armazenados na memória.
+
+\par O principal desafio desse laboratório foi a sincronização dos sinais de CLOCK para que
+o sistema exibisse o funcionamento correto.
+
+\newpage
+\section{Diagrama em blocos}
+
+\par O projeto foi todo desenvolvido em VHDL. 
+A seguir é apresentado o diagrama simplificado com os blocos funcionais do circuito.
+Os conversores HEX-7 segmentos e o divisor de clock foram omitidos do diagrama simplificado.
+
+\input{img/schematic.tex}
+
+\par O circuito possui apenas duas entradas, o CLK\_DIV (clock dividido) e o PB0 (botão da placa).
+O fluxo da informação no circuito começa no counter\_256, um contador de 0 até 255, que realiza
+o endereçamento da ROM com os dados fornecidos pelo professor. 
+Durante cada passo da contagem é necessário enviar pulsos para todos os componentes na ordem correta.
+Primeiro é necessário enviar um sinal de clock para atualizar os dados na saída da ROM.
+Após o tempo de propagação da memória o piso recebe um sinal de load e é carregado com os dados endereçados. 
+Com a saída do piso estável, são enviados 8 pulsos de clock para o piso e o detector de sequência. 
+Caso o detector encontre a sequência o sinal de enable do controlador de clock é desativado e
+o circuito suspende a contagem até que o botão da placa seja pressionado. 
+Caso contrário o detector de sequências recebe um sinal de reset, o contador é incrementado
+e ciclo se repete para outros os bytes armazenados na memória.
+
+\par Todos esses sinais precisam ser acionados exatamente na ordem descrita no paragráfo anterior.
+É necessário um sistema para controlar todos de forma correta. Esse controle é realizado pelo
+dispositivo clock\_controller.
+
+\newpage
+\section{Sincronização dos sinais de CLOCK}
+
+\par O dispositivo clock\_controller é uma máquina de estado responsável por controlar os sinais de
+clock, load e reset de todos os componentes. Os pulsos devem ser acionados conforme o diagrama de tempos a seguir.
+Os sinais de clock são ativos na borda de descida e os sinais de reset e load são ativos em zero.
+
+\vspace{3ex}
+
+\begin{tikztimingtable}[%
+    timing/dslope=0.1,
+    timing/.style={x=2ex,y=2ex},
+    x=5ex,
+    timing/rowdist=3ex,
+    timing/name/.style={font=\sffamily\scriptsize}
+]
+	\busref{clk\_geral}       & H 42{c} \\
+	\busref{clk\_counter}     & H 21{L} \\
+	\busref{reset\_sequence}  & L 21{H} \\
+	\busref{clk\_memo}        & H H L H H 17{H} \\
+	\busref{piso\_load}       & H H H L H 17{H} \\
+	\busref{clk\_serial}      & H H H H H 8{L H} H \\ 
+	\extracode
+	\begin{pgfonlayer}{background}
+		\begin{scope}[semitransparent ,semithick]
+		\vertlines[darkgray,dotted]{0,0.4,...,8.5}
+		\end{scope}
+	\end{pgfonlayer}
+\end{tikztimingtable}
+
+\vspace{3ex}
+
+\par O controle de clock foi implementado em VHDL utilizando o bloco process apresentado a seguir. 
+O bloco foi implementado com um contador e a com lógica combinacional para ativar as saídas na ordem correta.
+
+\begin{lstlisting}[language=VHDL]
+clock_controller: process(clk_geral) is
+  constant N: integer := 25;
+  variable counter: integer := 0;
+begin
+  if (falling_edge(clk_geral)) then
+    if enable = '0' then
+      if counter = N then
+        counter := 0;
+      else
+        counter := counter + 1;
+      end if;
+    end if;
+
+    if counter = 0 then
+      clk_counter <= '1';
+      reset_sequence <= '0';
+    else
+      clk_counter <= '0';
+      reset_sequence <= '1';
+    end if;
+
+    if counter = 1 then
+      clk_memo <= '0';
+    else
+      clk_memo <= '1';
+    end if;
+
+	-- Esse sinal foi atrasado em alguns ciclos
+	-- para garantir que a saida da memoria ja esta estavel
+    if counter = 5 then
+      piso_load <= '0';
+    else
+      piso_load <= '1';
+    end if;
+
+    case counter is
+      when 7|9|11|13|15|17|19|21 => clk_serial <= '0';
+      when others => clk_serial <= '1';
+    end case;
+  end if;
+end process clock_controller;
+\end{lstlisting}
+
+\newpage
+\section{Conclusão e comentários adicionais}
+
+\par Nesse laboratório foram praticados os conceitos de memórias digitais utilizando
+a memória do biblioteca IP (\textit{Intellectual property}) do Quartus.
+Os dados para serem armazenados foram carregados por meio de um arquivo .hex,
+um formato utilizado para descrever dados binários em texto ASCII.
+Esse tipo de arquivo é padrão e pode ser utilizado com outros dispositivos.
+
+\par O código para o piso, os conversores HEX-7 segmentos, o contador e o detector de
+sequência foram reaproveitados de práticas anteriores. A modularidade com que foram
+desenvolvidos facilitou muito reuso desses componentes.
+
+\par Em aula teória foram aprendidas técnicas para sincronização de clock de vários
+componentes, como foi necessário nessa prática. Uma das técnicas expostas foi a da
+utilização de um contador em anel para acionar o clock de vários componentes em sequência.
+Inicialmente esse método foi considerado, porém foi optado por utilizar um contador 
+crescente utilizando estados da contagem na entrada de um circuito sequêncial,
+cujo as saídas acionam os clocks apenas durante certos momentos da contagem.
+Foi decidido assim pois o código do contador, que já havia sido desenvolvido em
+práticas anteriores, foi facilmente adapatado.
+
+\end{document}
