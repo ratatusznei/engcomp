@@ -1,3 +1,18 @@
 [submodule "disciplinas/digital-systems/final_project"]
 	path = disciplinas/digital-systems/final_project
 	url = https://github.com/ratatusznei/simple_processor.git
+[submodule "disciplinas/oficina-de-integracao-1/gimbal"]
+	path = disciplinas/oficina-de-integracao-1/gimbal
+	url = https://github.com/ratatusznei/gimbal-EEX21
+[submodule "disciplinas/sistemas-operacionais/pingpongos"]
+	path = disciplinas/sistemas-operacionais/pingpongos
+	url = https://github.com/ratatusznei/pingpongos
+[submodule "disciplinas/bancos-de-dados/miniSGDB"]
+	path = disciplinas/bancos-de-dados/miniSGDB
+	url = https://github.com/ratatusznei/miniSGBD
+[submodule "disciplinas/comunicacao-de-dados/HDB3-chat"]
+	path = disciplinas/comunicacao-de-dados/HDB3-chat
+	url = https://github.com/ratatusznei/HDB3-chat
+[submodule "disciplinas/arquiteruta-de-computadores/processador"]
+	path = disciplinas/arquiteruta-de-computadores/processador
+	url = https://github.com/ratatusznei/projeto-arqcomp
