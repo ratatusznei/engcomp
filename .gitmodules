@@ -1,0 +1,3 @@
+[submodule "disciplinas/digital-systems/final_project"]
+	path = disciplinas/digital-systems/final_project
+	url = https://github.com/ratatusznei/simple_processor.git
