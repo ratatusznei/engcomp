@@ -1,5 +1,5 @@
-[submodule "disciplinas/digital-systems/final_project"]
-	path = disciplinas/digital-systems/final_project
+[submodule "disciplinas/sistemas-digitais/final_project"]
+	path = disciplinas/sistemas-digitais/final_project
 	url = https://github.com/ratatusznei/simple_processor.git
 [submodule "disciplinas/oficina-de-integracao-1/gimbal"]
 	path = disciplinas/oficina-de-integracao-1/gimbal
@@ -13,6 +13,6 @@
 [submodule "disciplinas/comunicacao-de-dados/HDB3-chat"]
 	path = disciplinas/comunicacao-de-dados/HDB3-chat
 	url = https://github.com/ratatusznei/HDB3-chat
-[submodule "disciplinas/arquiteruta-de-computadores/processador"]
-	path = disciplinas/arquiteruta-de-computadores/processador
+[submodule "disciplinas/arquitetura-de-computadores/processador"]
+	path = disciplinas/arquitetura-de-computadores/processador
 	url = https://github.com/ratatusznei/projeto-arqcomp
