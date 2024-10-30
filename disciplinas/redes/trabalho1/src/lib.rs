@@ -82,6 +82,7 @@
 //! - Quantidade de blocos (uint 32 bits)
 //! - Tamanho do bloco em octetos (uint 32 bits)
 //! - Tamanho do arquivo em octetos (uint 32 bits)
+//! - Checksum do arquivo (uint 32 bits)
 //! - Id do arquivo (uint 32 bits)
 //! - Nome do arquivo em UTF-8
 //!
@@ -106,26 +107,45 @@
 //! - Número do bloco (uint 32 bits)
 //! - Dados binários
 
-use std::net::{UdpSocket, ToSocketAddrs, SocketAddr};
 use std::fmt;
+use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
 pub enum Message {
-    GetInfo { file_name: String },
-    Info { block_count: u32, block_size: u32, file_size: u32, file_id: u32, file_name: String },
-    NotFound { file_name: String },
-    GetBlocks { start_block: u32, end_block: u32, file_id: u32 },
-    Block { file_id: u32, block_number: u32, data: Vec<u8> },
+    GetInfo {
+        file_name: String,
+    },
+    Info {
+        block_count: u32,
+        block_size: u32,
+        file_size: u32,
+        checksum: u32,
+        file_id: u32,
+        file_name: String,
+    },
+    NotFound {
+        file_name: String,
+    },
+    GetBlocks {
+        start_block: u32,
+        end_block: u32,
+        file_id: u32,
+    },
+    Block {
+        file_id: u32,
+        block_number: u32,
+        data: Vec<u8>,
+    },
 }
 
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
-            Message::GetInfo { file_name } =>
+            Message::GetInfo { file_name } => 
                 write!(f, "GetInfo {{ file_name: {} }}", file_name),
-            Message::Info { block_count, block_size, file_size, file_id, file_name } =>
+            Message::Info { block_count, block_size, file_size, checksum, file_id, file_name } =>
                 write!(f,
-                    "Info {{ block_count: {}, block_size: {}, file_size: {}, file_id: {}, file_name: {} }}",
-                    block_count, block_size, file_size, file_id, file_name
+                    "Info {{ block_count: {}, block_size: {}, file_size: {}, checksum: {}, file_id: {}, file_name: {} }}",
+                    block_count, block_size, file_size, checksum, file_id, file_name
                 ),
             Message::NotFound { file_name } =>
                 write!(f, "NotFound {{ file_name: {} }}", file_name),
@@ -138,8 +158,9 @@ impl fmt::Display for Message {
 }
 
 pub trait MessageSocket {
-    fn send_message<A>(&self, dest: A, message: Message) -> std::io::Result<usize> 
-        where A: ToSocketAddrs;
+    fn send_message<A>(&self, dest: A, message: Message) -> std::io::Result<usize>
+    where
+        A: ToSocketAddrs;
     fn recv_message(&self) -> Option<(Message, SocketAddr)>;
 }
 
@@ -156,10 +177,24 @@ impl Message {
         Message::GetInfo { file_name }
     }
 
-    pub fn info(block_count: u32, block_size: u32, file_size: u32, file_id: u32, file_name: &str) -> Self {
+    pub fn info(
+        block_count: u32,
+        block_size: u32,
+        file_size: u32,
+        checksum: u32,
+        file_id: u32,
+        file_name: &str,
+    ) -> Self {
         let file_name = String::from(file_name);
 
-        Message::Info { block_count, block_size, file_size, file_id, file_name }
+        Message::Info {
+            block_count,
+            block_size,
+            file_size,
+            checksum,
+            file_id,
+            file_name,
+        }
     }
 
     pub fn not_found(file_name: &str) -> Self {
@@ -169,51 +204,75 @@ impl Message {
     }
 
     pub fn get_blocks(file_id: u32, start_block: u32, end_block: u32) -> Self {
-        Message::GetBlocks { file_id, start_block, end_block }
+        Message::GetBlocks {
+            file_id,
+            start_block,
+            end_block,
+        }
     }
 
     pub fn block(file_id: u32, block_number: u32, data: &[u8]) -> Self {
         let data = data.to_vec();
 
-        Message::Block { file_id, block_number, data }
+        Message::Block {
+            file_id,
+            block_number,
+            data,
+        }
     }
 
     pub fn into_bytes(self) -> Vec<u8> {
         let mut vec = vec![];
 
         match self {
-            Message::GetInfo{ file_name } => {
+            Message::GetInfo { file_name } => {
                 vec.extend(&Message::GET_INFO.to_be_bytes());
                 vec.extend(file_name.as_bytes());
-            },
+            }
 
-            Message::Info{ block_count, block_size, file_size, file_id, file_name } => {
+            Message::Info {
+                block_count,
+                block_size,
+                file_size,
+                checksum,
+                file_id,
+                file_name,
+            } => {
                 vec.extend(&Message::INFO.to_be_bytes());
                 vec.extend(&block_count.to_be_bytes());
                 vec.extend(&block_size.to_be_bytes());
                 vec.extend(&file_size.to_be_bytes());
+                vec.extend(&checksum.to_be_bytes());
                 vec.extend(&file_id.to_be_bytes());
                 vec.extend(file_name.as_bytes());
-            },
+            }
 
             Message::NotFound { file_name } => {
                 vec.extend(&Message::NOT_FOUND.to_be_bytes());
                 vec.extend(file_name.as_bytes());
-            },
+            }
 
-            Message::GetBlocks { start_block, end_block, file_id } => {
+            Message::GetBlocks {
+                start_block,
+                end_block,
+                file_id,
+            } => {
                 vec.extend(&Message::GET_BLOCKS.to_be_bytes());
                 vec.extend(&start_block.to_be_bytes());
                 vec.extend(&end_block.to_be_bytes());
                 vec.extend(&file_id.to_be_bytes());
-            },
+            }
 
-            Message::Block { file_id, block_number, data } => {
+            Message::Block {
+                file_id,
+                block_number,
+                data,
+            } => {
                 vec.extend(&Message::BLOCK.to_be_bytes());
                 vec.extend(&file_id.to_be_bytes());
                 vec.extend(&block_number.to_be_bytes());
                 vec.extend(data);
-            },
+            }
         }
 
         vec
@@ -229,7 +288,7 @@ impl Message {
                 let file_name = String::from_utf8(file_name).ok()?;
 
                 Some(Message::get_info(&file_name))
-            },
+            }
 
             Message::INFO => {
                 let block_count: [u8; 4] = data[4..8].try_into().unwrap();
@@ -241,21 +300,31 @@ impl Message {
                 let file_size: [u8; 4] = data[12..16].try_into().unwrap();
                 let file_size = u32::from_be_bytes(file_size);
 
-                let file_id: [u8; 4] = data[16..20].try_into().unwrap();
+                let checksum: [u8; 4] = data[16..20].try_into().unwrap();
+                let checksum = u32::from_be_bytes(checksum);
+
+                let file_id: [u8; 4] = data[20..24].try_into().unwrap();
                 let file_id = u32::from_be_bytes(file_id);
 
-                let file_name = data[20..len].to_vec();
+                let file_name = data[24..len].to_vec();
                 let file_name = String::from_utf8(file_name).ok()?;
 
-                Some(Message::info(block_count, block_size, file_size, file_id, &file_name))
-            },
+                Some(Message::info(
+                    block_count,
+                    block_size,
+                    file_size,
+                    checksum,
+                    file_id,
+                    &file_name,
+                ))
+            }
 
             Message::NOT_FOUND => {
                 let file_name = data[4..len].to_vec();
                 let file_name = String::from_utf8(file_name).ok()?;
 
                 Some(Message::not_found(&file_name))
-            },
+            }
 
             Message::GET_BLOCKS => {
                 let start_block: [u8; 4] = data[4..8].try_into().unwrap();
@@ -268,7 +337,7 @@ impl Message {
                 let file_id = u32::from_be_bytes(file_id);
 
                 Some(Message::get_blocks(file_id, start_block, end_block))
-            },
+            }
 
             Message::BLOCK => {
                 let file_id: [u8; 4] = data[4..8].try_into().unwrap();
@@ -280,16 +349,17 @@ impl Message {
                 let data = &data[12..len];
 
                 Some(Message::block(file_id, block_number, data))
-            },
+            }
 
-            _ => None
+            _ => None,
         }
     }
 }
 
 impl MessageSocket for UdpSocket {
     fn send_message<A>(&self, dest: A, message: Message) -> std::io::Result<usize>
-    where A: ToSocketAddrs
+    where
+        A: ToSocketAddrs,
     {
         println!("--> {}", message);
         self.send_to(&message.into_bytes(), dest)
@@ -301,11 +371,9 @@ impl MessageSocket for UdpSocket {
         let message = Message::from_bytes(&buf, len).map(|message| (message, src));
         if let Some((msg, _)) = &message {
             println!("<-- {}", msg);
-        }
-        else {
+        } else {
             println!("Received malformed message");
         }
         message
     }
 }
-
