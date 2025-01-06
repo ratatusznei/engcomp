@@ -1,0 +1,87 @@
+### Configuração dos switch 0 e 1
+
+# Ativa modo de configuracao
+ena
+conf t
+
+# Cria vlan 2 com nome "alunos"
+# A vlan dos professores já existe como vlan 1 e nome "default"
+vlan 2
+name alunos
+
+# Configura a porta 3 para utilizar a vlan 2
+int fa0/3
+switchport access vlan 2
+
+# Configura a porta 4 para utilizar a vlan 2
+int fa0/4
+switchport access vlan 2
+
+# Configura porta 5 como trunk
+int fa0/5
+switchport mode trunk
+
+# Configura porta do roteador como trunk
+int fa0/24
+switchport mode trunk
+
+end
+
+# Imprime um sumário das configurações.
+# As portas 3 e 4 devem estar na vlan 2 enquanto as outras portas então na vlan 1.
+show vlan brief
+
+# Grava configurações
+wr
+
+
+---------------------------------------------------------------------------------------
+
+
+### Configuração do switch 2
+
+# Ativa modo de configuracao
+ena
+conf t
+
+# Cria vlan 2 com nome "alunos"
+# A vlan dos professores já existe como vlan 1 e nome "default"
+vlan 2
+name alunos
+
+# Configura porta 1 como trunk
+int fa0/1
+switchport mode trunk
+
+# Configura porta 2 como trunk
+int fa0/1
+switchport mode trunk
+
+end
+
+# Grava configurações
+wr
+
+
+### Configuracao no router
+en
+conf t
+int GigabitEthernet 0/0.1
+encapsulation dot1Q 1
+ip address 10.0.0.1 255.255.255.0
+exit
+
+int GigabitEthernet 0/0.2
+encapsulation dot1Q 2
+ip address 10.0.1.1 255.255.255.0
+exit
+
+int GigabitEthernet 0/0
+no shutdown
+exit
+
+ip route 10.0.0.0 255.255.255.0 GigabitEthernet 0/0.1 1
+ip route 10.0.1.0 255.255.255.0 GigabitEthernet 0/0.2 1
+
+exit
+wr
