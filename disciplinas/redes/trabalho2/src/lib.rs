@@ -82,7 +82,6 @@ impl Message {
                 vec.extend(filesize.to_string().as_bytes());
                 vec.extend("\n".as_bytes());
                 vec.extend(data);
-                vec.extend("\n".as_bytes());
             }
         }
 
