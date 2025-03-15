@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file path="complex_multiplier_sim/dspba_library_package.vhd" type="VHDL" />
+ <file path="complex_multiplier_sim/dspba_library.vhd" type="VHDL" />
+ <file path="complex_multiplier_sim/complex_multiplier.vhd" type="VHDL" />
+ <topLevel name="complex_multiplier" />
+ <deviceFamily name="max10" />
+</simPackage>

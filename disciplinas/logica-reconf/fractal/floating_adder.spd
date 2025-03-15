@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file path="floating_adder_sim/dspba_library_package.vhd" type="VHDL" />
+ <file path="floating_adder_sim/dspba_library.vhd" type="VHDL" />
+ <file path="floating_adder_sim/floating_adder.vhd" type="VHDL" />
+ <topLevel name="floating_adder" />
+ <deviceFamily name="max10" />
+</simPackage>

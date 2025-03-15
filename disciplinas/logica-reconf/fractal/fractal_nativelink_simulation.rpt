@@ -1,0 +1,23 @@
+Info: Start Nativelink Simulation process
+executing command line: ip-make-simscript --nativelink-mode --output-directory=fractal_iputf_input --spd=/home/op/Projects/Aulas/logica_reconf/fractal/complex_multiplier.spd --spd=/home/op/Projects/Aulas/logica_reconf/fractal/floating_adder.spd 
+
+========= EDA Simulation Settings =====================
+
+Sim Mode              :  RTL
+Family                :  max10
+Quartus root          :  /run/media/op/7c101ca4-10f4-41ca-a3a3-7f50176bc026/game/progs/Quartus-lite-18.1.0.625-linux/quartus/linux64/
+Quartus sim root      :  /run/media/op/7c101ca4-10f4-41ca-a3a3-7f50176bc026/game/progs/Quartus-lite-18.1.0.625-linux/quartus/eda/sim_lib
+Simulation Tool       :  modelsim-altera
+Simulation Language   :  verilog
+Simulation Mode       :  GUI
+Sim Output File       :  
+Sim SDF file          :  
+Sim dir               :  simulation/modelsim
+
+=======================================================
+
+Info: Starting NativeLink simulation with ModelSim-Altera software
+Sourced NativeLink script /run/media/op/7c101ca4-10f4-41ca-a3a3-7f50176bc026/game/progs/Quartus-lite-18.1.0.625-linux/quartus/common/tcl/internal/nativelink/modelsim.tcl
+Warning: File fractal_run_msim_rtl_verilog.do already exists - backing up current file as fractal_run_msim_rtl_verilog.do.bak11
+Info: Spawning ModelSim-Altera Simulation software 
+Info: NativeLink simulation flow was successful
